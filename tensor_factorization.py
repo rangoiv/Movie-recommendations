@@ -13,9 +13,9 @@ while (i,j,k) in observations Y do:
 '''
 import numpy as np
 import tensorly
+import warnings
 
 from sparse_array import NDSparseArray
-
 
 class D:
     def __init__(self, U: int, M: int, C: int):
@@ -85,15 +85,17 @@ def tensor_factorization(Y: NDSparseArray, d: D):
     la = Lambda(0.001, 0.001, 0.001, 0.001)
 
     n, m, c = Y.shape
-    U = np.random.rand(n, d.U)
-    M = np.random.rand(m, d.M)
-    C = np.random.rand(c, d.C)
-    S = np.random.rand(d.U, d.M, d.C)
+    U = np.random.rand(n, d.U) * 0.1**5
+    M = np.random.rand(m, d.M) * 0.1**5
+    C = np.random.rand(c, d.C) * 0.1**5
+    S = np.random.rand(d.U, d.M, d.C) * 0.1**7
 
     F = NDSparseArray(Y.shape)
 
     t = t0
-    for i, j, k in np.ndindex(Y.shape):
+    warnings.filterwarnings("error")
+    for ind, (i, j, k) in enumerate(Y.indexes()):
+        print(f"{ind}/{len(Y.elements)}", end='\r')
         m = 1 / t ** 0.5
         t = t + 1
         S1 = n_mode_product(S, U[i, :], 0)

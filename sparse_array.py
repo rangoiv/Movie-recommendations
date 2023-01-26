@@ -15,6 +15,9 @@ class NDSparseArray:
             value = 0
         return value
 
+    def indexes(self):
+        return self.elements.keys()
+
 # def sparse_mult(sparse, other_sparse):
 #
 #     out = NDSparseArray()
