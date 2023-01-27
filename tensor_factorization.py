@@ -11,11 +11,14 @@ while (i,j,k) in observations Y do:
   Fijk = SxU Ui*xM
 
 '''
+import math
+
 import numpy as np
 import tensorly
 import warnings
 
 from sparse_array import NDSparseArray
+
 
 class D:
     def __init__(self, U: int, M: int, C: int):
@@ -33,14 +36,6 @@ class Lambda:
 
 
 def n_mode_product(x, u, n):
-    # n = int(n)
-    # # We need one letter per dimension
-    # # (maybe you could find a workaround for this limitation)
-    # if n > 26:
-    #     raise ValueError('n is too large.')
-    # ind = ''.join(chr(ord('a') + i) for i in range(n))
-    # exp = f'{ind}K...,JK->{ind}J...'
-    # return np.einsum(exp, x, u)
     return tensorly.tenalg.mode_dot(x, u, n)
 
 
@@ -52,58 +47,85 @@ def dl(f, y):
     return f - y
 
 
-def dU(F, Y, i, j, k, S, U, M, C):
-    x = dl(F[i, j, k], Y[i, j, k])
+def dU(i, j, k, S, U, M, C):
     X = n_mode_product(S, M[j, :], 1)
     X = n_mode_product(X, C[k, :], 1)
-    return x*X
+    return X
 
 
-def dM(F, Y, i, j, k, S, U, M, C):
-    x = dl(F[i, j, k], Y[i, j, k])
+def dM(i, j, k, S, U, M, C):
     X = n_mode_product(S, U[i, :], 0)
     X = n_mode_product(X, C[k, :], 1)
-    return x*X
+    return X
 
 
-def dC(F, Y, i, j, k, S, U, M, C):
-    x = dl(F[i, j, k], Y[i, j, k])
+def dC(i, j, k, S, U, M, C):
     X = n_mode_product(S, U[i, :].T, 0)
     X = n_mode_product(X, M[j, :].T, 0)
-    return x*X
+    return X
 
 
-def dS(F, Y, i, j, k, S, U, M, C):
-    x = dl(F[i, j, k], Y[i, j, k])
-    X = np.kron(U[i, :], M[j, :])
-    X = np.kron(X, C[k, :])
-    return x*X.reshape(S.shape)
+def kron(A, B):
+    dim1 = np.concatenate([np.array(A.shape), np.array(B.shape) * 0 + 1])
+    dim2 = np.concatenate([np.array(A.shape) * 0 + 1, np.array(B.shape)])
+    return A.reshape(dim1) @ B.reshape(dim2)
+
+
+def dS(i, j, k, S, U, M, C):
+    X = kron(U[i, :], M[j, :])
+    X = kron(X, C[k, :])
+    return X
+
+
+def evaluate(U, M, C, S, i, j, k):
+    f = n_mode_product(S, U[i, :].T, 0)
+    f = n_mode_product(f, M[j, :].T, 0)
+    f = n_mode_product(f, C[k, :].T, 0)
+    return f
+
+
+def evaldev(U, M, C, S, y, i, j, k):
+    f = evaluate(U, M, C, S, i, j, k)
+    df = dl(f, y)
+    if math.isnan(f) or math.isnan(df) or math.isinf(f) or math.isinf(df):
+        raise RuntimeWarning
+    return f, df
 
 
 def tensor_factorization(Y: NDSparseArray, d: D):
-    t0 = 10
-    la = Lambda(0.001, 0.001, 0.001, 0.001)
+    t0 = 30
+    la = Lambda(0.000001, 0.0000001, 0.000001, 0.000001)
 
     n, m, c = Y.shape
-    U = np.random.rand(n, d.U) * 0.1**5
-    M = np.random.rand(m, d.M) * 0.1**5
-    C = np.random.rand(c, d.C) * 0.1**5
-    S = np.random.rand(d.U, d.M, d.C) * 0.1**7
+    U = np.random.rand(n, d.U) * 0.1
+    M = np.random.rand(m, d.M) * 0.1
+    C = np.random.rand(c, d.C) * 0.1
+    S = np.random.rand(d.U, d.M, d.C) * 0.1
 
-    F = NDSparseArray(Y.shape)
-
-    t = t0
     warnings.filterwarnings("error")
-    for ind, (i, j, k) in enumerate(Y.indexes()):
-        print(f"{ind}/{len(Y.elements)}", end='\r')
-        m = 1 / t ** 0.5
-        t = t + 1
-        S1 = n_mode_product(S, U[i, :], 0)
-        S1 = n_mode_product(S1, M[j, :], 0)
-        S1 = n_mode_product(S1, C[k, :], 0)
-        F[i, j, k] = S1
-        U[i, :] = U[i, :] - m * la.U * U[i, :] - m * dU(F, Y, i, j, k, S, U, M, C)
-        M[j, :] = M[j, :] - m * la.M * M[j, :] - m * dM(F, Y, i, j, k, S, U, M, C)
-        C[k, :] = C[k, :] - m * la.C * C[k, :] - m * dC(F, Y, i, j, k, S, U, M, C)
-        S = S - m * la.S * S - m * dS(F, Y, i, j, k, S, U, M, C)
+    for t in range(t0, t0 + 30):
+        m = 0.01 * 1 / (t ** 0.5)
+        SE = 0
+        for ind, (i, j, k) in enumerate(list(Y.indexes())):
+            y = Y[i, j, k]
+            try:
+                f, df = evaldev(U, M, C, S, y, i, j, k)
+                DU = dU(i, j, k, S, U, M, C)
+                DM = dM(i, j, k, S, U, M, C)
+                DC = dC(i, j, k, S, U, M, C)
+                DS = dS(i, j, k, S, U, M, C)
+                U[i, :] = U[i, :] - (m * df) * DU - m * la.U * U[i, :]
+                M[j, :] = M[j, :] - (m * df) * DM - m * la.M * M[j, :]
+                C[k, :] = C[k, :] - (m * df) * DC - m * la.C * C[k, :]
+                S = S - (m * df) * DS - m * la.S * S
+
+                SE += abs(df)
+            except RuntimeWarning:
+                print("Warning", end='\r')
+                U[np.isinf(U)] = 0
+                M[np.isinf(M)] = 0
+                S[np.isinf(S)] = 0
+                C[np.isinf(C)] = 0
+            print(f"{SE / (ind + 1)} {(ind + 1)}/{len(Y.elements)}", end='\r')
+        print()
     return U, M, C, S

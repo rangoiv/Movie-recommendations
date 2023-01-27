@@ -2,32 +2,50 @@ import numpy as np
 from datetime import datetime
 
 from sparse_array import NDSparseArray
-from tensor_factorization import tensor_factorization, D
+from tensor_factorization import tensor_factorization, D, evaluate
 
 
-# LOAD DATA
+def load_movies(fname: str):
+    arr = np.loadtxt(fname,
+                     delimiter=",", skiprows=1, dtype="i4,i4,f,i4")
+    print("Loaded dataset")
+    timestamps = [line[3] for line in arr]
+    mint = min(timestamps)
+    timestamps = timestamps - mint + 1
+    timestamps = (timestamps / 10000).astype(int)
 
-arr = np.loadtxt(".\datasets\movies\\ratings_small.csv",
-                 delimiter=",", skiprows=1, dtype="i4,i4,f,i4")
+    userIds = [line[0] for line in arr]
+    movieIds = [line[1] for line in arr]
+    ratings = [line[2] for line in arr]
 
-timestamps = [line[3] for line in arr]
-mint = min(timestamps)
-timestamps = timestamps - mint + 1
-timestamps = (timestamps / 10000).astype(int)
-maxt = max(timestamps)
+    Y = NDSparseArray((max(userIds)+1, max(movieIds)+1, max(timestamps)+1))
 
-userIds = [line[0] for line in arr]
-movieIds = [line[1] for line in arr]
-ratings = [line[2] for line in arr]
+    for i in range(len(userIds)):
+        Y[userIds[i], movieIds[i], timestamps[i]] = ratings[i]
 
-Y = NDSparseArray((max(userIds)+1, max(movieIds)+1, maxt+1))
+    return Y
 
-for i in range(len(arr)):
-    Y[userIds[i], movieIds[i], timestamps[i]] = ratings[i]
 
-# FACTORIZE
-U, M, C, S = tensor_factorization(Y, D(8, 10, 12))
+def main():
+    # LOAD DATA
+    Y = load_movies(".\datasets\movies\\ratings_small.csv")
+    Y_test = Y # load_movies(".\datasets\movies\\ratings_small.csv")
 
-# VERIFY
-print("Done!")
-print(U, M, C, S)
+    # FACTORIZE
+    print(Y.shape)
+    U, M, C, S = tensor_factorization(Y, D(27, 76, 13))
+
+    # VERIFY
+    print("Done!")
+    SE = 0
+    n = len(Y_test.elements)
+    for i, j, k in Y_test.indexes():
+        rating = Y_test[i, j, k]
+        evalRating = evaluate(U, M, C, S, i, j, k)
+        error = abs(rating - evalRating)
+        SE += error
+    MAE = SE / n
+    print(MAE)
+
+
+main()
