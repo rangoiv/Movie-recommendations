@@ -10,9 +10,9 @@ def load_movies(fname: str):
                      delimiter=",", skiprows=1, dtype="i4,i4,f,i4")
     print("Loaded dataset")
     timestamps = [line[3] for line in arr]
-    mint = min(timestamps)
-    timestamps = timestamps - mint + 1
-    timestamps = (timestamps / 10000).astype(int)
+    timestamps = [datetime.fromtimestamp(timestamp) for timestamp in timestamps]
+    mini = min(timestamps).year
+    timestamps = [(timestamp.year-mini)*12+timestamp.month for timestamp in timestamps]
 
     userIds = [line[0] for line in arr]
     movieIds = [line[1] for line in arr]
