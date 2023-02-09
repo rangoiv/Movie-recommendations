@@ -12,6 +12,7 @@ while (i,j,k) in observations Y do:
 
 '''
 import math
+from random import shuffle
 
 import numpy as np
 import tensorly
@@ -92,9 +93,8 @@ def evaldev(U, M, C, S, y, i, j, k):
     return f, df
 
 
-def tensor_factorization(Y: NDSparseArray, d: D):
-    t0 = 30
-    la = Lambda(0.000001, 0.0000001, 0.000001, 0.000001)
+def tensor_factorization(Y: NDSparseArray, d: D, t0=30):
+    la = Lambda(0.00001, 0.0001, 0.0001, 0.0001)
 
     n, m, c = Y.shape
     U = np.random.rand(n, d.U) * 0.1
@@ -103,10 +103,13 @@ def tensor_factorization(Y: NDSparseArray, d: D):
     S = np.random.rand(d.U, d.M, d.C) * 0.1
 
     warnings.filterwarnings("error")
-    for t in range(t0, t0 + 30):
-        m = 0.01 * 1 / (t ** 0.5)
+    print("Running tensor factorization")
+    for t in range(t0, t0 + 1):
         SE = 0
-        for ind, (i, j, k) in enumerate(list(Y.indexes())):
+        X = list(Y.indexes())
+        shuffle(X)
+        for ind, (i, j, k) in enumerate(X):
+            m = 1 / ((ind+t) ** 0.5)
             y = Y[i, j, k]
             try:
                 f, df = evaldev(U, M, C, S, y, i, j, k)
@@ -120,12 +123,12 @@ def tensor_factorization(Y: NDSparseArray, d: D):
                 S = S - (m * df) * DS - m * la.S * S
 
                 SE += abs(df)
+                print(f"\r{SE / (ind + 1)} {(ind + 1)}/{len(Y.elements)}", end='')
             except RuntimeWarning:
-                print("Warning", end='\r')
                 U[np.isinf(U)] = 0
                 M[np.isinf(M)] = 0
                 S[np.isinf(S)] = 0
                 C[np.isinf(C)] = 0
-            print(f"{SE / (ind + 1)} {(ind + 1)}/{len(Y.elements)}", end='\r')
+                print("\rWarning", end='')
         print()
     return U, M, C, S
