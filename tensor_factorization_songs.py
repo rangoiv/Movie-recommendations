@@ -1,3 +1,7 @@
+"""
+https://www.kaggle.com/datasets/cbhavik/music-taste-recommendation?resource=download
+"""
+
 import numpy as np
 from datetime import datetime
 
@@ -5,8 +9,8 @@ from sparse_array import NDSparseArray
 from tensor_factorization import tensor_factorization, D, evaluate
 
 
-def load_songs(fname: str):
-    arr = np.loadtxt(fname, delimiter=",", skiprows=1, dtype="i4,i4,i4,i4,i4,U20,i4")
+def load_songs():
+    arr = np.loadtxt(".\datasets\songs\\piki_dataset.csv", delimiter=",", skiprows=1, dtype="i4,i4,i4,i4,i4,U20,i4")
     print("Loaded dataset")
     print(arr)
     timestamps = [line[5] for line in arr]
@@ -33,7 +37,7 @@ def load_songs(fname: str):
 def main():
 
     # LOAD DATA
-    Y = load_songs(".\datasets\songs\\piki_dataset.csv")
+    Y = load_songs()
     Y_test = Y  # load_movies(".\datasets\movies\\ratings_small.csv")
     # FACTORIZE
     print(Y.shape)

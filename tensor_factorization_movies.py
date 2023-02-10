@@ -1,3 +1,7 @@
+"""
+https://www.kaggle.com/datasets/rounakbanik/the-movies-dataset?select=ratings.csv
+"""
+
 import numpy as np
 from datetime import datetime
 
@@ -5,9 +9,8 @@ from sparse_array import NDSparseArray
 from tensor_factorization import tensor_factorization, D, evaluate
 
 
-def load_movies(fname: str):
-    arr = np.loadtxt(fname,
-                     delimiter=",", skiprows=1, dtype="i4,i4,f,i4")
+def load_movies():
+    arr = np.loadtxt(".\datasets\movies\\ratings_small.csv", delimiter=",", skiprows=1, dtype="i4,i4,f,i4")
     print("Loaded dataset")
     timestamps = [line[3] for line in arr]
     timestamps = [datetime.fromtimestamp(timestamp) for timestamp in timestamps]
@@ -28,7 +31,7 @@ def load_movies(fname: str):
 
 def main():
     # LOAD DATA
-    Y = load_movies(".\datasets\movies\\ratings_small.csv")
+    Y = load_movies()
     Y_test = Y  # load_movies(".\datasets\movies\\ratings_small.csv")
 
     # FACTORIZE

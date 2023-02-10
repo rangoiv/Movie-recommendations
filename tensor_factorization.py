@@ -97,10 +97,10 @@ def tensor_factorization(Y: NDSparseArray, d: D, t0=30):
     la = Lambda(0.00001, 0.0001, 0.0001, 0.0001)
 
     n, m, c = Y.shape
-    U = np.random.rand(n, d.U) * 0.1
-    M = np.random.rand(m, d.M) * 0.1
-    C = np.random.rand(c, d.C) * 0.1
-    S = np.random.rand(d.U, d.M, d.C) * 0.1
+    U = np.random.rand(n, d.U) * 0.01
+    M = np.random.rand(m, d.M) * 0.01
+    C = np.random.rand(c, d.C) * 0.01
+    S = np.random.rand(d.U, d.M, d.C) * 0.01
 
     warnings.filterwarnings("error")
     print("Running tensor factorization")
@@ -109,7 +109,7 @@ def tensor_factorization(Y: NDSparseArray, d: D, t0=30):
         X = list(Y.indexes())
         shuffle(X)
         for ind, (i, j, k) in enumerate(X):
-            m = 1 / ((ind+t) ** 0.5)
+            m = 0.01 * 1 / ((ind+t) ** 0.5)
             y = Y[i, j, k]
             try:
                 f, df = evaldev(U, M, C, S, y, i, j, k)
