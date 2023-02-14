@@ -93,42 +93,52 @@ def evaldev(U, M, C, S, y, i, j, k):
     return f, df
 
 
-def tensor_factorization(Y: NDSparseArray, d: D, t0=30):
-    la = Lambda(0.00001, 0.0001, 0.0001, 0.0001)
-
-    n, m, c = Y.shape
-    U = np.random.rand(n, d.U) * 0.01
-    M = np.random.rand(m, d.M) * 0.01
-    C = np.random.rand(c, d.C) * 0.01
-    S = np.random.rand(d.U, d.M, d.C) * 0.01
-
+def factorization_cycle(U, M, C, S, Y,
+                        coef=lambda s: 0.01 * 1 / ((s + 30) ** 0.5),
+                        la=Lambda(0.00001, 0.0001, 0.0001, 0.0001)):
+    SE = 0
+    X = list(Y.indexes())
+    shuffle(X)
     warnings.filterwarnings("error")
-    print("Running tensor factorization")
-    for t in range(t0, t0 + 1):
-        SE = 0
-        X = list(Y.indexes())
-        shuffle(X)
-        for ind, (i, j, k) in enumerate(X):
-            m = 0.01 * 1 / ((ind+t) ** 0.5)
-            y = Y[i, j, k]
-            try:
-                f, df = evaldev(U, M, C, S, y, i, j, k)
-                DU = dU(i, j, k, S, U, M, C)
-                DM = dM(i, j, k, S, U, M, C)
-                DC = dC(i, j, k, S, U, M, C)
-                DS = dS(i, j, k, S, U, M, C)
-                U[i, :] = U[i, :] - (m * df) * DU - m * la.U * U[i, :]
-                M[j, :] = M[j, :] - (m * df) * DM - m * la.M * M[j, :]
-                C[k, :] = C[k, :] - (m * df) * DC - m * la.C * C[k, :]
-                S = S - (m * df) * DS - m * la.S * S
+    for t, (i, j, k) in enumerate(X):
+        m = coef(t)
+        y = Y[i, j, k]
+        try:
+            f, df = evaldev(U, M, C, S, y, i, j, k)
+            DU = dU(i, j, k, S, U, M, C)
+            DM = dM(i, j, k, S, U, M, C)
+            DC = dC(i, j, k, S, U, M, C)
+            DS = dS(i, j, k, S, U, M, C)
+            U[i, :] = U[i, :] - (m * df) * DU - m * la.U * U[i, :]
+            M[j, :] = M[j, :] - (m * df) * DM - m * la.M * M[j, :]
+            C[k, :] = C[k, :] - (m * df) * DC - m * la.C * C[k, :]
+            S = S - (m * df) * DS - m * la.S * S
 
-                SE += abs(df)
-                print(f"\r{SE / (ind + 1)} {(ind + 1)}/{len(Y.elements)}", end='')
-            except RuntimeWarning:
-                U[np.isinf(U)] = 0
-                M[np.isinf(M)] = 0
-                S[np.isinf(S)] = 0
-                C[np.isinf(C)] = 0
-                print("\rWarning", end='')
-        print()
+            SE += abs(df)
+            print(f"\r{SE / (t + 1)} {(t + 1)}/{len(Y.elements)}     ", end='')
+        except RuntimeWarning:
+            U[np.isinf(U)] = 0
+            M[np.isinf(M)] = 0
+            S[np.isinf(S)] = 0
+            C[np.isinf(C)] = 0
+            print("\rWarning          ", end='')
+    print()
+    return U, M, C, S
+
+
+def initialize_factorization(Y: NDSparseArray, d: D, la: Lambda = Lambda(0.01, 0.01, 0.01, 0.01)):
+    n, m, c = Y.shape
+    U = np.random.rand(n, d.U) * la.U
+    M = np.random.rand(m, d.M) * la.M
+    C = np.random.rand(c, d.C) * la.C
+    S = np.random.rand(d.U, d.M, d.C) * la.S
+
+    return U, M, C, S
+
+
+def tensor_factorization(Y: NDSparseArray, d: D, t0=30):
+    print("Running tensor factorization")
+    U, M, C, S = initialize_factorization(Y, d)
+    for t in range(t0, t0 + 1):
+        U, M, C, S = factorization_cycle(U, M, C, S, Y)
     return U, M, C, S
