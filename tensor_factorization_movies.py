@@ -7,6 +7,7 @@ from datetime import datetime
 
 from sparse_array import NDSparseArray
 from tensor_factorization import tensor_factorization, D, evaluate
+from KNN_algorithm_functions import knn_algorithm, all_pairwise_distances
 
 
 def load_movies():
@@ -23,16 +24,31 @@ def load_movies():
 
     Y = NDSparseArray((max(userIds)+1, max(movieIds)+1, max(timestamps)+1))
 
+    #data for KNN algorithm
+    n = max(userIds)+1
+    A = []
+    for i in range(n):
+        temp = []
+        A.append(temp)
+    for i in range(len(userIds)):
+        A[userIds[i]].append((movieIds[i], ratings[i]))
+
     for i in range(len(userIds)):
         Y[userIds[i], movieIds[i], timestamps[i]] = ratings[i]
 
-    return Y
-
+    return Y, A
 
 def main():
     # LOAD DATA
-    Y = load_movies()
+    Y ,A = load_movies()
     Y_test = Y  # load_movies(".\datasets\movies\\ratings_small.csv")
+
+    #comment block below if you don't need KNN algorithm results
+    print("start")
+    dist = all_pairwise_distances(A)
+    print("found distances")
+    grade = knn_algorithm(10, 1, 1, A, dist)
+    print(grade,end='\n')
 
     # FACTORIZE
     print(Y.shape)
@@ -49,6 +65,8 @@ def main():
         SE += error
     MAE = SE / n
     print(MAE)
+
+    
 
 
 main()

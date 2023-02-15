@@ -19,9 +19,11 @@ def calc_distance(A, B):
             sol += single_weight(A[p1][1], B[p2][1])
             p1 += 1
             p2 += 1
+
     ret = 0
     if br:
         ret = sol/br
+
     return ret
 
 def all_pairwise_distances(A):
@@ -32,22 +34,38 @@ def all_pairwise_distances(A):
         for j in range(n):
             temp.append(0)
         dist.append(temp)
+
     for i in range(n):
         for j in range(i+1,n):
             dist[i][j] = dist[j][i] = calc_distance(A[i],A[j])
+
     return dist
                  
-"""def knn_algorithm(k, userId, movieId, A):
-    dist = all_pairwise_distances(A)
+def knn_algorithm(K, userId, movieId, A, dist):
     sorted_pairs = []
     for i in range(len(A)):
         if i == userId:
             continue
-        sorted_pairs.append(dist[userId][i], i)
+        sorted_pairs.append((dist[userId][i], i))
+        
     sorted_pairs.sort(reverse=True)
+    
     counter = 0
     rating = [0]*11
     for (i,j) in sorted_pairs:
-        if 
-"""        
+        for (k,l) in A[j]:
+            if k == movieId:
+                rating[int(l*2//1)]+=i
+                counter += 1
+        if counter == K:
+            break
+                
+    ret = 0
+    for i in range(11):
+        if rating[i] > rating[ret]:
+            ret = i
+            
+    return ret/2
+        
+    
     
