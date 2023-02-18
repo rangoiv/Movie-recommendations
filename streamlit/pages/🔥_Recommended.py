@@ -8,3 +8,5 @@ st.set_page_config(
 )
 
 st.title("Movies ratings")
+
+st.write(st.session_state)
