@@ -93,9 +93,9 @@ def evaldev(U, M, C, S, y, i, j, k):
     return f, df
 
 
-def factorization_cycle(U, M, C, S, Y,
-                        coef=lambda s: 0.01 * 1 / ((s + 30) ** 0.5),
-                        la=Lambda(0.00001, 0.0001, 0.0001, 0.0001)):
+def fine_tune(U, M, C, S, Y,
+              coef=lambda s: 0.01 * 1 / ((s + 30) ** 0.5),
+              la=Lambda(0.00001, 0.0001, 0.0001, 0.0001)):
     SE = 0
     X = list(Y.indexes())
     shuffle(X)
@@ -140,5 +140,5 @@ def tensor_factorization(Y: NDSparseArray, d: D, t0=30):
     print("Running tensor factorization")
     U, M, C, S = initialize_factorization(Y, d)
     for t in range(t0, t0 + 1):
-        U, M, C, S = factorization_cycle(U, M, C, S, Y)
+        U, M, C, S = fine_tune(U, M, C, S, Y)
     return U, M, C, S
