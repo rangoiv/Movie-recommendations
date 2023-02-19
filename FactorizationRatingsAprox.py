@@ -28,7 +28,9 @@ class FactorizationRatingsAprox:
     def evaluate(self, movie_ratings):
         Y = NDSparseArray(self.Y_shape)
         timestamp = Y.shape[2]-1
+        watched_movies = set()
         for rating in movie_ratings:
+            watched_movies.add(rating[0])
             Y[self.new_user_id, rating[0], timestamp] = rating[1]
 
         U = np.array(self.U, copy=True)
@@ -46,6 +48,7 @@ class FactorizationRatingsAprox:
             aproximate_ratings.append([rating, movie_id])
 
         aproximate_ratings = [rating if 0 < rating[0] < 5.5 else [0, rating[1]] for rating in aproximate_ratings]
+        aproximate_ratings = [rating if not rating[1] in watched_movies else [0, rating[1]] for rating in aproximate_ratings]
         aproximate_ratings.sort(reverse=True)
         aproximate_ratings = [[rating[1], float(rating[0])] for rating in aproximate_ratings]
         return aproximate_ratings[:100]

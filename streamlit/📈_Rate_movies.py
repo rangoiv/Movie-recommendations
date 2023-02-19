@@ -16,7 +16,7 @@ st.set_page_config(
     page_icon="intelligence.jpg",
 )
 
-@st.cache
+@st.cache_data
 def get_data1():
     data = pd.read_csv("movies_metadata.csv", low_memory=False)
     return data
