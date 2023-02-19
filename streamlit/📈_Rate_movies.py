@@ -8,17 +8,23 @@ import io
 if st.session_state=={}:
     st.session_state = dict()
     rating_list=dict()
+
 rating_list = st.session_state
+
 st.set_page_config(
     page_title="Rate movies",
     page_icon="intelligence.jpg",
 )
 
+@st.cache
+def get_data1():
+    data = pd.read_csv("movies_metadata.csv", low_memory=False)
+    return data
 
 st.title("Movies ratings")
 
 no_image = Image.open(".\\image_not_available.jpg")
-data = pd.read_csv(".\\movies_metadata.csv", low_memory=False)
+data = get_data1()
 columns = data.columns
 
 # st.write(columns)
@@ -53,13 +59,13 @@ with st.form("Form"):
                 st.text(movie.iloc[j]['title'])
                 response = requests.get("https://image.tmdb.org/t/p/original" + movie.iloc[j]['poster_path'])
                 if response.status_code == 200:
-                    st.image(response.content)
+                    st.image(response.content, width=200)
                 else:
-                    st.image(no_image)
+                    st.image(no_image, width=200)
                 st.write(" Watch [trailer](https://www.imdb.com/title/" + movie.iloc[j]['imdb_id'] + ")")
                 rating=st.slider("Ocijeni film: ", 0.0, 5.0, step = 0.5, key = i)
 
-                rating_list[movie.iloc[i]['id']] = rating
+                rating_list[movie.iloc[j]['id']] = rating
                 # st.write(st.session_state)
                 i=i+1
                 j=j+1
@@ -74,12 +80,12 @@ with st.form("Form"):
                 st.text(movie.iloc[j]['title'])
                 response = requests.get("https://image.tmdb.org/t/p/original" + movie.iloc[j]['poster_path'])
                 if response.status_code == 200:
-                    st.image(response.content)
+                    st.image(response.content, width=200)
                 else:
-                    st.image(no_image)
+                    st.image(no_image,width=200)
                 st.write(" Watch [trailer](https://www.imdb.com/title/" + movie.iloc[j]['imdb_id'] + ")")
                 rating=st.slider("Ocijeni film: ", 0.0, 5.0, step = 0.5, key = i)
-                rating_list[movie.iloc[i]['id']]= rating
+                rating_list[movie.iloc[j]['id']]= rating
                 i=i+1
                 j=j+1
             except:
@@ -95,12 +101,12 @@ with st.form("Form"):
                 st.text(movie.iloc[j]['title'])
                 response = requests.get("https://image.tmdb.org/t/p/original" + movie.iloc[j]['poster_path'])
                 if response.status_code == 200:
-                    st.image(response.content)
+                    st.image(response.content, width=200)
                 else:
-                    st.image(no_image)
+                    st.image(no_image, width=200)
                 st.write(" Watch [trailer](https://www.imdb.com/title/" + movie.iloc[j]['imdb_id'] + ")")
                 rating=st.slider("Ocijeni film: ", 0.0, 5.0, step = 0.5, key = i)
-                rating_list[movie.iloc[i]['id']]= rating
+                rating_list[movie.iloc[j]['id']]= rating
                 i=i+1
                 j=j+1
             except:
