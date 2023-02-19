@@ -95,7 +95,8 @@ def evaldev(U, M, C, S, y, i, j, k):
 
 def fine_tune(U, M, C, S, Y,
               coef=lambda s: 0.01 * 1 / ((s + 30) ** 0.5),
-              la=Lambda(0.00001, 0.0001, 0.0001, 0.0001)):
+              la=Lambda(0.00001, 0.0001, 0.0001, 0.0001),
+              debug=True):
     SE = 0
     X = list(Y.indexes())
     shuffle(X)
@@ -115,14 +116,17 @@ def fine_tune(U, M, C, S, Y,
             S = S - (m * df) * DS - m * la.S * S
 
             SE += abs(df)
-            print(f"\r{SE / (t + 1)} {(t + 1)}/{len(Y.elements)}     ", end='')
+            if debug:
+                print(f"\r{SE / (t + 1)} {(t + 1)}/{len(Y.elements)}     ", end='')
         except RuntimeWarning:
             U[np.isinf(U)] = 0
             M[np.isinf(M)] = 0
             S[np.isinf(S)] = 0
             C[np.isinf(C)] = 0
-            print("\rWarning          ", end='')
-    print()
+            if debug:
+                print("\rWarning          ", end='')
+    if debug:
+        print()
     return U, M, C, S
 
 

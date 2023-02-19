@@ -7,13 +7,24 @@ from tensor_factorization import Lambda, fine_tune, evaluate
 
 
 class FactorizationRatingsAprox:
-    def __init__(self, U, M, C, S, Y_shape, new_user_id):
+    def __init__(self, U, M, C, S, Y: NDSparseArray, new_user_id):
         self.U = U
         self.M = M
         self.C = C
         self.S = S
-        self.Y_shape = Y_shape
+        self.Y_shape = Y.shape
         self.new_user_id = new_user_id
+
+        average_ratings = {}
+        for ind in Y.indexes():
+            score = Y[ind]
+            movie_id = ind[1]
+            if not movie_id in average_ratings:
+                average_ratings[movie_id] = [0, 0]
+            average_ratings[movie_id][0] += score
+            average_ratings[movie_id][1] += 1
+        self.average_ratings = average_ratings
+
 
     @classmethod
     def from_file(cls, path_to_file):
@@ -28,10 +39,11 @@ class FactorizationRatingsAprox:
     def evaluate(self, movie_ratings):
         Y = NDSparseArray(self.Y_shape)
         timestamp = Y.shape[2]-1
-        watched_movies = set()
         for rating in movie_ratings:
-            watched_movies.add(rating[0])
             Y[self.new_user_id, rating[0], timestamp] = rating[1]
+        average_ratings = {}
+        for movie_id in self.average_ratings:
+            average_ratings[movie_id] = self.average_ratings[movie_id][0] / self.average_ratings[movie_id][1]
 
         U = np.array(self.U, copy=True)
         M = np.array(self.M, copy=True)
@@ -40,15 +52,17 @@ class FactorizationRatingsAprox:
         la = Lambda(0.000001, 0.0000001, 0.000001, 0.000001)
 
         for t in range(30, 35):
-            U, M, C, S = fine_tune(U, M, C, S, Y, lambda s: 0.01 * 1 / (t ** 0.5), la)
+            U, M, C, S = fine_tune(U, M, C, S, Y, lambda s: 0.01 * 1 / (t ** 0.5), la, debug=False)
 
         aproximate_ratings = []
         for movie_id in range(self.Y_shape[1]):
             rating = evaluate(U, M, C, S, self.new_user_id, movie_id, timestamp)
             aproximate_ratings.append([rating, movie_id])
 
-        aproximate_ratings = [rating if 0 < rating[0] < 5.5 else [0, rating[1]] for rating in aproximate_ratings]
-        aproximate_ratings = [rating if not rating[1] in watched_movies else [0, rating[1]] for rating in aproximate_ratings]
-        aproximate_ratings.sort(reverse=True)
-        aproximate_ratings = [[rating[1], float(rating[0])] for rating in aproximate_ratings]
-        return aproximate_ratings[:100]
+        new_aproximate_ratings = []
+        for rating in aproximate_ratings:
+            if 0 < rating[0] < 5.5 and rating[1] in average_ratings:
+                new_aproximate_ratings.append([rating[0], rating[1]])
+        aproximate_ratings = new_aproximate_ratings
+        aproximate_ratings = [[float(rating[0]), rating[1]] for rating in aproximate_ratings]
+        return aproximate_ratings

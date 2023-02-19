@@ -1,3 +1,5 @@
+import math
+
 import streamlit as st
 import pandas as pd
 import sys
@@ -44,19 +46,34 @@ for key in my_ratings.keys():
         list =[int(key), my_ratings[key]]
         ratings.append(list)
 
-print(ratings)
+print("Your ratings: ", ratings)
 
 if ratings != []:
-    recommended = obj.evaluate(ratings[:10])
+    recommended_ratings = obj.evaluate(ratings)
+    recommended = []
+    for rating in recommended_ratings:
+        movie_id = rating[1]
+        score = rating[0]
+        people_watched = obj.average_ratings[movie_id][1]
+        average_score = obj.average_ratings[movie_id][0] / people_watched
+        dif = score-average_score
+        flip = -1 if dif < 0 else 1
+        new_score = score + flip * abs(dif)**2 * math.log(people_watched**0.5)
+        recommended.append([new_score, score, movie_id])
+    recommended.sort(reverse=True)
+    recommended = [[rating[2], rating[0], rating[1]] for rating in recommended]
 
-
+    print("Top 10 recomended: ", recommended[:10])
     j=1
     i=0
     while j<11:
         movie = movies[movies['id'] == str(recommended[i][0])]
-        
-        try: 
-            st.header(str(j) + ". " + movie.iloc[0]['title'])
+        try:
+            title = movie.iloc[0]['title']
+            movie_id = recommended[i][0]
+            print(j, movie_id, recommended[i][2], title, obj.average_ratings[movie_id],
+                  obj.average_ratings[movie_id][0] / obj.average_ratings[movie_id][1])
+            st.header(str(j) + ". " + title)
             st.text("Rating: " + str(round(recommended[i][1],2)))
             response = requests.get("https://image.tmdb.org/t/p/original" + movie.iloc[0]['poster_path'])
             if response.status_code == 200:
@@ -67,8 +84,8 @@ if ratings != []:
             j=j+1
             i=i+1
         except:
-            print("Nema filma")
+            print(f"Nema filma {recommended[i][0]}")
             i=i+1
-        
+    print()
 else:
     st.header("Please rate some movies. :back:")
