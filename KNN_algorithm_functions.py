@@ -26,46 +26,49 @@ def calc_distance(A, B):
 
     return ret
 
-def all_pairwise_distances(A):
+def all_distances(A, userId):
     n = len(A)
     dist = []
     for i in range(n):
-        temp = []
-        for j in range(n):
-            temp.append(0)
-        dist.append(temp)
-
-    for i in range(n):
-        for j in range(i+1,n):
-            dist[i][j] = dist[j][i] = calc_distance(A[i],A[j])
-
+        if i == userId:
+            dist.append(0)
+        else:
+            dist.append(calc_distance(A[i], A[userId]))
+        
     return dist
                  
-def knn_algorithm(K, userId, movieId, A, dist):
+def knn_algorithm(K, userId, A, dist):
+    rating = [0]*11
+    rating_dict = {}
+    counting_dict = {}
+    for (i,j) in A[userId]:
+        rating_dict[i] = rating
+        counting_dict[i] = 0
+
     sorted_pairs = []
     for i in range(len(A)):
         if i == userId:
             continue
-        sorted_pairs.append((dist[userId][i], i))
+        sorted_pairs.append((dist[i], i))
         
     sorted_pairs.sort(reverse=True)
-    
-    counter = 0
-    rating = [0]*11
     for (i,j) in sorted_pairs:
         for (k,l) in A[j]:
-            if k == movieId:
-                rating[int(l*2//1)]+=i
-                counter += 1
-        if counter == K:
-            break
-                
-    ret = 0
-    for i in range(11):
-        if rating[i] > rating[ret]:
-            ret = i
-            
-    return ret/2
+            if k not in counting_dict:
+                continue
+            if counting_dict[k] == K:
+                continue
+            rating_dict[k][int(l*2)] += i
+            counting_dict[k] += 1
+
+    ret = []
+    for (i,k) in A[userId]:
+        ind = 0
+        for j in range(11):
+            if rating_dict[i][j] > rating_dict[i][ind]:
+                ind = j
+        ret.append((i, ind/2))
+    return ret
         
     
     
