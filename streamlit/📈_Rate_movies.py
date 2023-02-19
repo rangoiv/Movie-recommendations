@@ -16,11 +16,13 @@ st.set_page_config(
 
 
 @st.cache_data
+@st.cache(persist=True, ttl=86400)
 def get_metadata():
     return pd.read_csv("movies_metadata.csv", low_memory=False)
 
 
 @st.cache_data
+@st.cache(persist=True, ttl=86400)
 def get_available_movies():
     _ratings = pd.read_csv("../datasets/movies/ratings_small.csv", low_memory=False)
     _avaliable_movies = set()
