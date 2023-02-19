@@ -18,7 +18,7 @@ st.set_page_config(
     page_icon="intelligence.jpg",
 )
 
-@st.cache
+@st.cache(persist=True, ttl=86400)
 def get_data():
     data = pd.read_csv("movies_metadata.csv", low_memory=False)
     model_path = "../factorization_movies_model.pkl"
