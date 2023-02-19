@@ -15,14 +15,12 @@ st.set_page_config(
 )
 
 
-@st.cache_data
-@st.cache(persist=True, ttl=86400)
+@st.cache_data(persist=True, ttl=86400)
 def get_metadata():
     return pd.read_csv("movies_metadata.csv", low_memory=False)
 
 
-@st.cache_data
-@st.cache(persist=True, ttl=86400)
+@st.cache_data(persist=True, ttl=86400)
 def get_available_movies():
     _ratings = pd.read_csv("../datasets/movies/ratings_small.csv", low_memory=False)
     _avaliable_movies = set()
@@ -55,7 +53,7 @@ movie['popularity'] = movie['popularity'].astype(float)
 
 movie = movie.sort_values(by=['popularity'], ascending=False)
 
-movie = movie.head(100)
+movie = movie.head(200)
 movie = movie.sample(n=20)
 
 i = 0
@@ -67,12 +65,13 @@ with st.form("Form"):
         with col:
             while i < number_of_rows * (col_num+1):
                 try:
-                    st.text(movie.iloc[j]['title'])
+                    title = movie.iloc[j]['title']
                     response = requests.get("https://image.tmdb.org/t/p/original" + movie.iloc[j]['poster_path'])
                     if response.status_code == 200:
                         st.image(response.content, width=200)
                     else:
                         st.image(no_image, width=200)
+                    st.text(title)
                     st.write(" Watch [trailer](https://www.imdb.com/title/" + movie.iloc[j]['imdb_id'] + ")")
                     rating = st.slider("Ocijeni film: ", 0.0, 5.0, step=0.5, key=i)
 
@@ -88,4 +87,4 @@ with st.form("Form"):
 
 if submitted:
     st.session_state = rating_list
-    st.write(st.session_state)
+    # st.write(st.session_state)
