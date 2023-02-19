@@ -48,4 +48,4 @@ class FactorizationRatingsAprox:
         aproximate_ratings = [rating if 0 < rating[0] < 5.5 else [0, rating[1]] for rating in aproximate_ratings]
         aproximate_ratings.sort(reverse=True)
         aproximate_ratings = [[rating[1], float(rating[0])] for rating in aproximate_ratings]
-        return aproximate_ratings[:10]
+        return aproximate_ratings[:100]
