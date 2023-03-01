@@ -57,6 +57,9 @@ factorization algorithm.
 
 You need Jupyter notebook installed.
 
+Also, install the required dataset from 
+[here](https://www.kaggle.com/datasets/rounakbanik/the-movies-dataset?select=ratings.csv)
+and put it in folder `./datasets/movies/` and if needed to `./streamlit/`.
 
 ## Citations 
 1. Alexandros Karatzoglou, Xavier Amatriain, Linas Baltrunas, and Nuria
